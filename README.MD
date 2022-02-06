@@ -22,14 +22,26 @@ To run the dashboard with the mock data is simple, just type `rmarkdown::run("Da
 --------------------------------------------------------------
 
 If you want to try it with your own data, you have to follow these steps:
+
+
 1 Run *NubanksSetup(first time only).py* You should inspect the code and comment out the packages that are already installed.
+
 	- It will execute the CLI made by adreoroggeri asking you the credentials of your account
+
 	- after login, it will create a certificate named *cert.p12*
+
+
 2 Open *get_data.py* in a IDE and:
+
 	-replace "seuCPF_apenas_numeros_" with your CPF as a string, and "suasenha" with your password as a string aswell. 
+
 	-you can run the script now(it will create a csv of all your credit card transactions), but the dashboard code calls it everytime you start it 
+
+
 3 Open *Dashboard.Rmd* and:
+
 	-Remove the comment from the `#reticulate::py_run_file(glue("{here()}/get_data.py"))`
+
 	-Write `rmarkdown::run("Dasboard.Rmd")` and you should be good
 
 	
