@@ -19,6 +19,8 @@ Thanks @andreroggeri for creating the Pynubank library with nice documentation a
 
 To run the dashboard with the mock data is simple, just type `rmarkdown::run("Dasboard.Rmd")` in Rstudio console and in some seconds it should open
 
+Or you can visit at: https://sterndavi.shinyapps.io/Nubank_Dashboard/
+
 --------------------------------------------------------------
 
 If you want to try it with your own data, you have to follow these steps:

@@ -1,0 +1,14 @@
+name: Nubank_Dashboard
+title: Nubank_Dashboard
+username:
+account: sterndavi
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5592459
+bundleId: 5549855
+url: https://sterndavi.shinyapps.io/Nubank_Dashboard/
+when: 1644182211.53225
+lastSyncTime: 1644182211.53225
+asMultiple: FALSE
+asStatic: FALSE
+additionalFiles: data/data.csv
