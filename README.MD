@@ -18,7 +18,9 @@ Thanks @andreroggeri for creating the Pynubank library with nice documentation a
 ----------------------------------------------------------------
 
 To run the dashboard with the mock data is simple, just type `rmarkdown::run("Dasboard.Rmd")` in Rstudio console and in some seconds it should open
-````
+
+--------------------------------------------------------------
+
 If you want to try it with your own data, you have to follow these steps:
 1 Run *NubanksSetup(first time only).py* You should inspect the code and comment out the packages that are already installed.
 	- It will execute the CLI made by adreoroggeri asking you the credentials of your account
@@ -29,5 +31,5 @@ If you want to try it with your own data, you have to follow these steps:
 3 Open *Dashboard.Rmd* and:
 	-Remove the comment from the `#reticulate::py_run_file(glue("{here()}/get_data.py"))`
 	-Write `rmarkdown::run("Dasboard.Rmd")` and you should be good
-````
+
 	
