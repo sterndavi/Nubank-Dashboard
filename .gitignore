@@ -1,3 +1,4 @@
+.gitignore
 .Rhistory
 cert.p12
-/rsconnect
+rsconnect/
