@@ -1,0 +1,222 @@
+---
+title: "Relatório Nubank"
+author: 
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 5
+      base_font:
+        google: "Open Sans"
+    orientation: columns
+    css: style.css
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+# This Dashboard and project as a whole was made to control our credit card usage at home, there's a lot to improve, some ideias are: selector to filter the history graph by category, a page dedicated to checking account and some objetive metrics
+
+# There's a lot of space to refactoring in this code, could star by cleaning the dependencies.
+
+# The style modifications reside in a separate file, named style.css, first time messing arround with styling stuff
+
+#to run the dashboard you should write 'rmarkdown::run("Dashboard.Rmd")' in the console
+
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(here)
+library(lubridate)
+library(shiny)
+library(DT)
+library(bslib)
+library(glue)
+
+# Python code that requests the credit card data and save as a .csv
+#reticulate::py_run_file(glue("{here()}/get_data.py"))
+
+# Credit Card DF
+df <- read_csv(glue::glue("{here()}/data/data.csv"))
+
+# Cleaning the data frame so we only have what we really need
+df1 <- df %>% 
+    select(`...1`, description, title, amount, time, source) %>% 
+    mutate(amount = amount / 100,
+           year = year(time),
+           month = month(time),
+           day = day(time),
+           valor_str = glue::glue("R$ {amount}"))
+
+#Color palette used by graphs and the styles.css file
+my_pal <- c("#d1c8c2","#797671", "#232323",
+            "#11462d", "#815834", "#33849b",
+            "#b3cecf", "#a43a4c", "#dd442c",
+            "#d3a4ac", "#F9BA02")
+
+
+
+```
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+ 
+# Dropdown menu with months
+selectInput("monthNum", label = h3("Selecione o Mês"), 
+    choices = list(
+        "Jan" = 1, "Fev" = 2, "Mar" = 3,
+        "Abr" = 4, "Mai" = 5, "Jun" = 6,
+        "Jul" = 7, "Ago" = 8, "Set" = 9,
+        "Out" = 10, "Nov" = 11, "Dez" = 12), 
+    selected = lubridate::month(lubridate::today()))
+
+# Dropdown menu with years
+    selectInput("yearNum", label = h3("Selecione o Ano"),
+    choices = c(2018:lubridate::year(lubridate::today())), #the first year is 2018, but I should make that it takes the first year from the data frame instead
+    selected = lubridate::year(lubridate::today()))
+```
+
+
+
+Column {data-width=440}
+-----------------------------------------------------------------------
+
+### Gastos detalhados
+    
+```{r}
+# To make the elements reactive you have to wrap the code with reactive({code}) and the variables should be "input$nameoftheselector"
+sel_data <- reactive({
+
+#source DF to the DT table    
+    data <- df1 %>% 
+    dplyr::filter(month == input$monthNum & year == input$yearNum) %>% 
+    mutate(time = as_date(time)) %>% 
+    select(time, description, title, valor_str) %>% 
+    rename("Data" = time, "Detalhes" = description, "Categoria" = title, "Valor" = valor_str)
+    
+    })
+# rendering the DT, aditional options can be passed as JS using JS() inside options arguments 
+renderDT({
+    sel_data()}, options = list(
+                            pageLength = 12,
+                            lengthChange = FALSE
+                            ), height = "900px")
+
+```
+
+
+Column {data-width=440}
+-----------------------------------------------------------------------
+
+
+### Gastos por categoria
+    
+```{r}
+
+
+#df filtered by category (title)
+per_title <- df1 %>%
+    group_by(title,year, month) %>% 
+    summarise(sum = sum(amount)) %>% 
+    mutate(valor = glue::glue("R$ {sum}"),
+    month = as.integer(month), year = as.integer(year))
+
+#another way to wrap the inputs
+switch_month <- reactive(input$monthNum) 
+switch_year <- reactive(input$yearNum)
+
+#render a reactive plotly graph
+renderPlotly({
+#filter the df by the select date
+per_title_date <- per_title %>% 
+    dplyr::filter(month == switch_month() & year == switch_year())
+
+#font and size
+t <- list(family = "Open Sans",
+  size = 14)
+
+#stacked bar graph sorted by category
+fig <- per_title_date %>% plot_ly(y = ~month,
+                                  x = ~sum,
+                                  color = ~title,
+                                  type = "bar",
+                                  orientation = "h",
+                                  text = ~glue::glue("{ title} {valor}"),
+                                  hoverinfo = "text",
+                                  colors = my_pal)
+
+fig <- fig %>% layout(barmode = "stack",
+                      yaxis = list(showticklabels = F,
+                                   title = "",
+                                   showgrid = FALSE),
+                      xaxis = list(title = "Valor em R$",
+                                   zeroline = FALSE,
+                                    showline = FALSE,
+                                   showgrid = FALSE), 
+                      font = t,
+                      paper_bgcolor='rgba(0,0,0,0)',#make the background transparent, a in rbga means Alpha 
+                      plot_bgcolor='rgba(0,0,0,0)')
+})
+
+#this whole chunk is a mess, I could clean this up a bit
+```
+   
+
+   
+### Histórico
+
+```{r}
+
+# The historical graph only uses the year dropdown 
+selector_lastYear <- reactive(input$yearNum - 1)
+#filter all spendings by year    
+historical_data <-  df1 %>% 
+                    group_by(year, month) %>% 
+                    summarise(total = sum(amount)) %>% 
+                    mutate(Total = glue::glue("R$ {total}"))
+
+
+
+renderPlotly({
+
+hist_data <- historical_data %>% 
+    dplyr::filter(year == switch_year())
+    
+    
+    
+#render an area plot with total spendings made in a given year    
+    hist <- plot_ly(hist_data,
+                    x = ~month,
+                    y = ~total,
+                    type = "scatter",
+                    mode = "lines",
+                    fill = "tozeroy",
+                    fillcolor = "#33849B")
+    
+    hist <- hist %>% layout(
+        font = list(family = "Open Sans",
+                    size = 14),
+        yaxis = list(showticklabels = T,
+                     title = "Valor em R$",
+                     showgrid = FALSE),
+        xaxis = list(title = "Mês",
+                     tickvals = list(1, 2, 3,
+                                     4, 5, 6,
+                                     7, 8, 9,
+                                     10,11,12),
+                     ticktext = list("Jan", "Fev", "Mar",
+                                    "Abr", "Mai", "Jun",
+                                    "Jul", "Ago", "Set",
+                                    "Out", "Nov", "Dez"),
+                     tickmode = "array",
+                     zeroline = FALSE,
+                    showline = FALSE,
+                    showgrid = FALSE),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)')
+})
+
+```
+
+
+
