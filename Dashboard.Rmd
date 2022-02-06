@@ -1,15 +1,17 @@
 ---
 title: "Relatório Nubank"
-author: 
-output: 
+author: "null"
+output:
   flexdashboard::flex_dashboard:
     theme:
       version: 5
       base_font:
-        google: "Open Sans"
+        google: Open Sans
     orientation: columns
     css: style.css
 runtime: shiny
+resource_files:
+- data/data.csv
 ---
 
 ```{r global, include=FALSE}
